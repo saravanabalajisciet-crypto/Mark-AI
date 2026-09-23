@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkAI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- ═══════════════════════════════════════
+         SIDEBAR
+    ════════════════════════════════════════ -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-mark">M</div>
+            <div>
+                <h1>MarkAI</h1>
+                <span>Academic Intelligence</span>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <a href="/" class="nav-item active">
+                <span>⌂</span> Overview
+            </a>
+            <a href="#markForm" class="nav-item">
+                <span>＋</span> Mark Entry
+            </a>
+            <a href="/class" class="nav-item">
+                <span>▦</span> Class Analysis
+            </a>
+            <a href="#" class="nav-item">
+                <span>✦</span> AI Assistant
+            </a>
+            <a href="/paperscan" class="nav-item">
+                <span>⬡</span> PaperScan
+            </a>
+            <a href="#" class="nav-item">
+                <span>▤</span> Reports
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="#" class="nav-item">
+                <span>⚙</span> Settings
+            </a>
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>System Ready</strong>
+                    <small>MarkAI is operational</small>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- ═══════════════════════════════════════
+         MAIN
+    ════════════════════════════════════════ -->
+    <main class="main">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="mobile-brand"><strong>MarkAI</strong></div>
+            <div class="topbar-right">
+                <button class="icon-button" title="Help">?</button>
+                <div class="profile">
+                    <div class="profile-avatar">F</div>
+                    <div>
+                        <strong>Faculty</strong>
+                        <small>Instructor</small>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+
+        <!-- Content -->
+        <div class="content">
+
+            <!-- Welcome -->
+            <section class="welcome">
+                <div>
+                    <p class="eyebrow">ACADEMIC WORKSPACE</p>
+                    <h2>Good day, Faculty</h2>
+                    <p>
+                        Enter internal assessment marks, review part-wise
+                        breakdowns, and track class performance from one
+                        workspace.
+                    </p>
+                </div>
+                <a href="#markForm">
+                    <button class="primary-button">+ New Mark Entry</button>
+                </a>
+            </section>
+
+
+            <!-- ─────────────────────────────────────
+                 STATISTICS — computed from class store
+            ──────────────────────────────────────── -->
+            <section class="stats-grid">
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Total Students</span>
+                        <div class="stat-icon blue">01</div>
+                    </div>
+                    {{if .Stats.TotalStudents}}
+                        <strong>{{.Stats.TotalStudents}}</strong>
+                        <small>Submitted this session</small>
+                    {{else}}
+                        <strong>—</strong>
+                        <small>No entries yet</small>
+                    {{end}}
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Passed</span>
+                        <div class="stat-icon green">✓</div>
+                    </div>
+                    {{if .Stats.TotalStudents}}
+                        <strong>{{.Stats.Passed}}</strong>
+                        <small>Score ≥ {{.Stats.PassMark}} / 50</small>
+                    {{else}}
+                        <strong>—</strong>
+                        <small>No entries yet</small>
+                    {{end}}
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Needs Review</span>
+                        <div class="stat-icon orange">!</div>
+                    </div>
+                    {{if .Stats.TotalStudents}}
+                        <strong>{{.Stats.NeedsReview}}</strong>
+                        <small>Score &lt; {{.Stats.PassMark}} / 50</small>
+                    {{else}}
+                        <strong>—</strong>
+                        <small>No entries yet</small>
+                    {{end}}
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Class Average</span>
+                        <div class="stat-icon purple">%</div>
+                    </div>
+                    {{if .Stats.TotalStudents}}
+                        <strong>{{printf "%.1f" .Stats.ClassAverage}}</strong>
+                        <small>Mean score out of 50</small>
+                    {{else}}
+                        <strong>—</strong>
+                        <small>No entries yet</small>
+                    {{end}}
+                </div>
+
+            </section>
+
+
+            <!-- ─────────────────────────────────────
+                 VALIDATION ERROR BANNER
+            ──────────────────────────────────────── -->
+            {{if .ErrorMsg}}
+            <div class="error-banner" role="alert">
+                <span class="error-icon">⚠</span>
+                <span>{{.ErrorMsg}}</span>
+            </div>
+            {{end}}
+
+
+            <!-- ─────────────────────────────────────
+                 WORKSPACE
+            ──────────────────────────────────────── -->
+            <section class="workspace-grid">
+
+
+                <!-- ══════════════════════════════════
+                     MARK ENTRY FORM
+                ══════════════════════════════════ -->
+                <div class="panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <h3>Mark Entry</h3>
+                            <p>Enter internal assessment marks — maximum 50</p>
+                        </div>
+                        <span class="badge">50 Marks</span>
+                    </div>
+
+
+                    <form id="markForm" action="/calculate" method="POST" novalidate>
+
+                        <!-- Student identity -->
+                        <div class="form-grid">
+
+                            <div class="field">
+                                <label for="name">Student Name</label>
+                                <input
+                                    id="name"
+                                    type="text"
+                                    name="name"
+                                    placeholder="Enter student name"
+                                    required
+                                    autocomplete="off"
+                                >
+                            </div>
+
+                            <div class="field">
+                                <label for="regno">Register Number</label>
+                                <input
+                                    id="regno"
+                                    type="text"
+                                    name="regno"
+                                    placeholder="Enter register number"
+                                    required
+                                    autocomplete="off"
+                                >
+                            </div>
+
+                        </div>
+
+
+                        <!-- ──────────────────────────────
+                             PART A  — 5 × 2 = 10 Marks
+                        ─────────────────────────────── -->
+                        <div class="mark-section">
+
+                            <div class="section-heading">
+                                <div>
+                                    <strong>Part A</strong>
+                                    <small>5 questions · 2 marks each</small>
+                                </div>
+                                <span>10 Marks</span>
+                            </div>
+
+                            <div class="question-grid">
+
+                                <div class="question-field">
+                                    <label for="q1">Q1</label>
+                                    <input id="q1" type="number" name="q1"
+                                        min="0" max="2" placeholder="0–2" required>
+                                </div>
+
+                                <div class="question-field">
+                                    <label for="q2">Q2</label>
+                                    <input id="q2" type="number" name="q2"
+                                        min="0" max="2" placeholder="0–2" required>
+                                </div>
+
+                                <div class="question-field">
+                                    <label for="q3">Q3</label>
+                                    <input id="q3" type="number" name="q3"
+                                        min="0" max="2" placeholder="0–2" required>
+                                </div>
+
+                                <div class="question-field">
+                                    <label for="q4">Q4</label>
+                                    <input id="q4" type="number" name="q4"
+                                        min="0" max="2" placeholder="0–2" required>
+                                </div>
+
+                                <div class="question-field">
+                                    <label for="q5">Q5</label>
+                                    <input id="q5" type="number" name="q5"
+                                        min="0" max="2" placeholder="0–2" required>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ──────────────────────────────
+                             PART B  — 2 × 16 = 32 Marks
+
+                             Each question shows Option A and
+                             Option B as side-by-side cards.
+                             Selecting a radio activates that
+                             card and disables the other.
+                             A hidden field (b1_mark / b2_mark)
+                             receives the chosen mark on submit.
+                        ─────────────────────────────── -->
+                        <div class="mark-section">
+
+                            <div class="section-heading">
+                                <div>
+                                    <strong>Part B</strong>
+                                    <small>Select one option per question and enter its mark</small>
+                                </div>
+                                <span>32 Marks</span>
+                            </div>
+
+
+                            <!-- Part B — Question 1 -->
+                            <div class="choice-question" id="cq-b1">
+
+                                <div class="choice-question-label">
+                                    <strong>Question 1</strong>
+                                    <small>max 16 marks</small>
+                                </div>
+
+                                <div class="option-pair">
+
+                                    <!-- Option A -->
+                                    <label class="option-block" id="block-b1-A">
+                                        <div class="option-header">
+                                            <input
+                                                type="radio"
+                                                name="b1_option"
+                                                value="A"
+                                                class="option-radio"
+                                                data-pair="b1"
+                                                data-side="A"
+                                            >
+                                            <span class="option-label-text">Option A</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="b1_mark_a"
+                                            class="option-mark-input"
+                                            min="0" max="16"
+                                            placeholder="0 – 16"
+                                            disabled
+                                            autocomplete="off"
+                                        >
+                                    </label>
+
+                                    <!-- Option B -->
+                                    <label class="option-block" id="block-b1-B">
+                                        <div class="option-header">
+                                            <input
+                                                type="radio"
+                                                name="b1_option"
+                                                value="B"
+                                                class="option-radio"
+                                                data-pair="b1"
+                                                data-side="B"
+                                            >
+                                            <span class="option-label-text">Option B</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="b1_mark_b"
+                                            class="option-mark-input"
+                                            min="0" max="16"
+                                            placeholder="0 – 16"
+                                            disabled
+                                            autocomplete="off"
+                                        >
+                                    </label>
+
+                                </div>
+
+                                <!-- Hidden field read by backend -->
+                                <input type="hidden" name="b1_mark" id="b1_mark">
+
+                                <p class="option-hint" id="hint-b1">
+                                    Select Option A or Option B to enter a mark.
+                                </p>
+
+                            </div>
+
+
+                            <!-- Part B — Question 2 -->
+                            <div class="choice-question" id="cq-b2">
+
+                                <div class="choice-question-label">
+                                    <strong>Question 2</strong>
+                                    <small>max 16 marks</small>
+                                </div>
+
+                                <div class="option-pair">
+
+                                    <label class="option-block" id="block-b2-A">
+                                        <div class="option-header">
+                                            <input
+                                                type="radio"
+                                                name="b2_option"
+                                                value="A"
+                                                class="option-radio"
+                                                data-pair="b2"
+                                                data-side="A"
+                                            >
+                                            <span class="option-label-text">Option A</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="b2_mark_a"
+                                            class="option-mark-input"
+                                            min="0" max="16"
+                                            placeholder="0 – 16"
+                                            disabled
+                                            autocomplete="off"
+                                        >
+                                    </label>
+
+                                    <label class="option-block" id="block-b2-B">
+                                        <div class="option-header">
+                                            <input
+                                                type="radio"
+                                                name="b2_option"
+                                                value="B"
+                                                class="option-radio"
+                                                data-pair="b2"
+                                                data-side="B"
+                                            >
+                                            <span class="option-label-text">Option B</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="b2_mark_b"
+                                            class="option-mark-input"
+                                            min="0" max="16"
+                                            placeholder="0 – 16"
+                                            disabled
+                                            autocomplete="off"
+                                        >
+                                    </label>
+
+                                </div>
+
+                                <input type="hidden" name="b2_mark" id="b2_mark">
+
+                                <p class="option-hint" id="hint-b2">
+                                    Select Option A or Option B to enter a mark.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ──────────────────────────────
+                             PART C  — 1 × 8 = 8 Marks
+                        ─────────────────────────────── -->
+                        <div class="mark-section">
+
+                            <div class="section-heading">
+                                <div>
+                                    <strong>Part C</strong>
+                                    <small>Select one option and enter its mark</small>
+                                </div>
+                                <span>8 Marks</span>
+                            </div>
+
+
+                            <!-- Part C — Question 3 -->
+                            <div class="choice-question" id="cq-c3">
+
+                                <div class="choice-question-label">
+                                    <strong>Question 3</strong>
+                                    <small>max 8 marks</small>
+                                </div>
+
+                                <div class="option-pair">
+
+                                    <label class="option-block" id="block-c3-A">
+                                        <div class="option-header">
+                                            <input
+                                                type="radio"
+                                                name="c3_option"
+                                                value="A"
+                                                class="option-radio"
+                                                data-pair="c3"
+                                                data-side="A"
+                                            >
+                                            <span class="option-label-text">Option A</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="c3_mark_a"
+                                            class="option-mark-input"
+                                            min="0" max="8"
+                                            placeholder="0 – 8"
+                                            disabled
+                                            autocomplete="off"
+                                        >
+                                    </label>
+
+                                    <label class="option-block" id="block-c3-B">
+                                        <div class="option-header">
+                                            <input
+                                                type="radio"
+                                                name="c3_option"
+                                                value="B"
+                                                class="option-radio"
+                                                data-pair="c3"
+                                                data-side="B"
+                                            >
+                                            <span class="option-label-text">Option B</span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="c3_mark_b"
+                                            class="option-mark-input"
+                                            min="0" max="8"
+                                            placeholder="0 – 8"
+                                            disabled
+                                            autocomplete="off"
+                                        >
+                                    </label>
+
+                                </div>
+
+                                <input type="hidden" name="c3_mark" id="c3_mark">
+
+                                <p class="option-hint" id="hint-c3">
+                                    Select Option A or Option B to enter a mark.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <button type="submit" class="primary-button full-button">
+                            Calculate Result
+                        </button>
+
+                    </form>
+
+                </div><!-- /panel -->
+
+
+                <!-- ══════════════════════════════════
+                     AI ASSISTANT — foundation / upcoming
+                ══════════════════════════════════ -->
+                <div class="panel ai-panel">
+
+                    <div class="ai-title">
+                        <div class="ai-symbol">✦</div>
+                        <div>
+                            <h3>MarkAI Intelligence</h3>
+                            <p>
+                                Natural-language queries about class
+                                performance — coming in the next release.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="ai-coming-soon">
+                        <span class="coming-soon-badge">Coming Soon</span>
+                        <p>
+                            The AI assistant will let you ask questions
+                            such as "Show students below 25" or
+                            "How many students failed?" once class-level
+                            data collection is live.
+                        </p>
+                    </div>
+
+                    <div class="ai-input" style="opacity:0.45; pointer-events:none;">
+                        <input type="text" placeholder='Try "Show students below 25"'>
+                        <button class="primary-button" disabled>Ask MarkAI</button>
+                    </div>
+
+                    <div class="suggestions" style="opacity:0.45; pointer-events:none;">
+                        <span>Planned queries</span>
+                        <button type="button">How many students failed?</button>
+                        <button type="button">Show students below 25</button>
+                        <button type="button">Show students above 35</button>
+                        <button type="button">Class performance</button>
+                    </div>
+
+                </div><!-- /ai-panel -->
+
+
+            </section><!-- /workspace-grid -->
+
+
+            <!-- ─────────────────────────────────────
+                 RESULT CARD
+            ──────────────────────────────────────── -->
+            {{if .Result}}
+
+            <section class="panel result-panel" id="result">
+
+                <div class="panel-header">
+                    <div>
+                        <h3>Assessment Result</h3>
+                        <p>Part-wise breakdown for the submitted entry</p>
+                    </div>
+                    <span class="badge">50 Marks</span>
+                </div>
+
+                <div class="result-identity">
+                    <div>
+                        <small>Student Name</small>
+                        <strong>{{.Result.Name}}</strong>
+                    </div>
+                    <div>
+                        <small>Register Number</small>
+                        <strong>{{.Result.RegNo}}</strong>
+                    </div>
+                </div>
+
+                <div class="result-grid">
+
+                    <div class="result-cell">
+                        <small>Part A</small>
+                        <strong>{{.Result.PartATotal}} <span class="out-of">/ 10</span></strong>
+                    </div>
+
+                    <div class="result-cell">
+                        <small>Part B</small>
+                        <strong>{{.Result.PartBTotal}} <span class="out-of">/ 32</span></strong>
+                    </div>
+
+                    <div class="result-cell">
+                        <small>Part C</small>
+                        <strong>{{.Result.PartCTotal}} <span class="out-of">/ 8</span></strong>
+                    </div>
+
+                    <div class="result-cell result-total">
+                        <small>Total</small>
+                        <strong>{{.Result.Total}} <span class="out-of">/ 50</span></strong>
+                    </div>
+
+                    <div class="result-cell result-pct">
+                        <small>Percentage</small>
+                        <strong>{{printf "%.2f" .Result.Percentage}}<span class="out-of">%</span></strong>
+                    </div>
+
+                </div>
+
+            </section>
+
+            {{end}}
+
+
+        </div><!-- /content -->
+
+    </main>
+
+</div><!-- /app -->
+
+<!-- MOBILE BOTTOM NAV — hidden on desktop via CSS -->
+<nav class="mob-nav" aria-label="Mobile navigation">
+    <a href="/"          class="mob-nav-item mob-nav-active">
+        <span class="mob-nav-icon">⌂</span>
+        <span class="mob-nav-label">Dashboard</span>
+    </a>
+    <a href="/#markForm" class="mob-nav-item">
+        <span class="mob-nav-icon">＋</span>
+        <span class="mob-nav-label">Marks</span>
+    </a>
+    <a href="/class"     class="mob-nav-item">
+        <span class="mob-nav-icon">▦</span>
+        <span class="mob-nav-label">Class</span>
+    </a>
+    <a href="/paperscan" class="mob-nav-item">
+        <span class="mob-nav-icon">⬡</span>
+        <span class="mob-nav-label">PaperScan</span>
+    </a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     OPTION SELECTION LOGIC
+     ─────────────────────────────────────────────────
+     Behaviour for each A/B question:
+       1. Both mark inputs start disabled (no option chosen).
+       2. When a radio is selected:
+            • Its option-block gets class "selected"  (blue border + bg).
+            • The other block gets class "disabled"   (muted appearance).
+            • The selected input is enabled and focused.
+            • The other input is cleared and disabled.
+       3. On form submit:
+            • Copy the active input's value into the
+              corresponding hidden field (b1_mark etc.).
+            • If the hidden field is empty, show an inline
+              hint and cancel submission.
+════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    'use strict';
+
+    // All three questions share the same pairing logic.
+    // pairs maps pair-id → { A: markInputId, B: markInputId, hidden: hiddenId }
+    var pairs = {
+        b1: { A: 'b1_mark_a', B: 'b1_mark_b', hidden: 'b1_mark', hint: 'hint-b1' },
+        b2: { A: 'b2_mark_a', B: 'b2_mark_b', hidden: 'b2_mark', hint: 'hint-b2' },
+        c3: { A: 'c3_mark_a', B: 'c3_mark_b', hidden: 'c3_mark', hint: 'hint-c3' }
+    };
+
+    // Wire up every option radio button.
+    document.querySelectorAll('.option-radio').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            var pairId  = this.dataset.pair;   // e.g. "b1"
+            var side    = this.dataset.side;   // "A" or "B"
+            var other   = side === 'A' ? 'B' : 'A';
+            var p       = pairs[pairId];
+
+            var activeInput  = document.getElementById(p[side]);
+            var inactiveInput = document.getElementById(p[other]);
+
+            // Block elements
+            var activeBlock  = document.getElementById('block-' + pairId + '-' + side);
+            var inactiveBlock = document.getElementById('block-' + pairId + '-' + other);
+
+            // Activate selected block
+            activeBlock.classList.add('selected');
+            activeBlock.classList.remove('disabled');
+            activeInput.disabled = false;
+            activeInput.focus();
+
+            // Deactivate the other block
+            inactiveBlock.classList.remove('selected');
+            inactiveBlock.classList.add('disabled');
+            inactiveInput.disabled = true;
+            inactiveInput.value = '';
+
+            // Clear any validation hint
+            var hint = document.getElementById(p.hint);
+            hint.style.display = 'none';
+        });
+    });
+
+    // On submit: copy visible values into hidden fields.
+    // Catch missing option or empty mark before sending.
+    document.getElementById('markForm').addEventListener('submit', function (e) {
+        var valid = true;
+
+        Object.keys(pairs).forEach(function (pairId) {
+            var p = pairs[pairId];
+            var hint = document.getElementById(p.hint);
+
+            // Find which radio is checked
+            var checkedRadio = document.querySelector(
+                'input[type="radio"][data-pair="' + pairId + '"]:checked'
+            );
+
+            if (!checkedRadio) {
+                hint.textContent = 'Please select Option A or Option B before submitting.';
+                hint.style.display = 'block';
+                valid = false;
+                return;
+            }
+
+            var side        = checkedRadio.dataset.side;
+            var activeInput = document.getElementById(p[side]);
+            var value       = activeInput.value.trim();
+
+            if (value === '') {
+                hint.textContent = 'Enter a mark for the selected option.';
+                hint.style.display = 'block';
+                activeInput.focus();
+                valid = false;
+                return;
+            }
+
+            // All good — write to hidden field
+            document.getElementById(p.hidden).value = value;
+            hint.style.display = 'none';
+        });
+
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+
+}());
+</script>
+
+</body>
+</html>

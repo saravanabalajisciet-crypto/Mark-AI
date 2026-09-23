@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaperScan — MarkAI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+
+    <!-- ═══════════════════════════════════
+         SIDEBAR
+    ════════════════════════════════════ -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">M</div>
+            <div><h1>MarkAI</h1><span>Academic Intelligence</span></div>
+        </div>
+        <nav class="nav">
+            <a href="/"        class="nav-item"><span>⌂</span> Overview</a>
+            <a href="/#markForm" class="nav-item"><span>＋</span> Mark Entry</a>
+            <a href="/class"   class="nav-item"><span>▦</span> Class Analysis</a>
+            <a href="#"        class="nav-item"><span>✦</span> AI Assistant</a>
+            <a href="/paperscan" class="nav-item active"><span>⬡</span> PaperScan</a>
+            <a href="#"        class="nav-item"><span>▤</span> Reports</a>
+        </nav>
+        <div class="sidebar-bottom">
+            <a href="#" class="nav-item"><span>⚙</span> Settings</a>
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <div><strong>System Ready</strong><small>MarkAI is operational</small></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════════════════════════
+         MAIN
+    ════════════════════════════════════ -->
+    <main class="main">
+
+        <header class="topbar">
+            <div class="mobile-brand"><strong>MarkAI</strong></div>
+            <div class="topbar-right">
+                <button class="icon-button" title="Help">?</button>
+                <div class="profile">
+                    <div class="profile-avatar">F</div>
+                    <div><strong>Faculty</strong><small>Instructor</small></div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+
+            <!-- Page heading -->
+            <section class="welcome">
+                <div>
+                    <p class="eyebrow">PAPERSCAN</p>
+                    <h2>Scan Evaluated Marks</h2>
+                    <p>
+                        Capture or upload <strong>only the evaluated marks section</strong>
+                        of the answer paper. PaperScan will attempt to read the
+                        question-wise marks for faculty verification.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ─────────────────────────────────
+                 ERROR BANNER
+            ──────────────────────────────────── -->
+            {{if .ErrorMsg}}
+            <div class="error-banner" role="alert">
+                <span class="error-icon">⚠</span>
+                <span>{{.ErrorMsg}}</span>
+            </div>
+            {{end}}
+
+
+            <!-- ═══════════════════════════════════════════════════
+                 STAGE 1 — UPLOAD / CAMERA
+            ════════════════════════════════════════════════════ -->
+            {{if eq .Stage "upload"}}
+
+            <div class="panel ps-upload-panel">
+
+                <div class="panel-header">
+                    <div>
+                        <h3>Upload Marks Image</h3>
+                        <p>Upload only the section containing the evaluated question-wise marks.</p>
+                    </div>
+                    <span class="badge">JPG · PNG</span>
+                </div>
+
+                <!-- ── INPUT OPTIONS ─────────────────────────── -->
+                <div class="ps-input-options">
+
+                    <!-- Camera option -->
+                    <div class="ps-option-card" id="cameraCard">
+                        <div class="ps-option-icon">📷</div>
+                        <strong>Scan with Camera</strong>
+                        <small>Use your device camera to capture the marks section</small>
+                        <button type="button" class="primary-button ps-opt-btn" id="openCameraBtn">
+                            📷 Scan with Camera
+                        </button>
+                    </div>
+
+                    <!-- Upload option -->
+                    <div class="ps-option-card">
+                        <div class="ps-option-icon">📁</div>
+                        <strong>Upload Image</strong>
+                        <small>Upload a cropped JPG or PNG of the marks section</small>
+                        <form id="uploadForm" action="/paperscan/extract" method="POST" enctype="multipart/form-data">
+                            <label class="primary-button ps-opt-btn ps-upload-label" for="imageFileInput">
+                                📁 Choose Image
+                            </label>
+                            <input type="file" id="imageFileInput" name="marks_image"
+                                accept=".jpg,.jpeg,.png" style="display:none">
+                            <input type="hidden" name="marks_image" id="cameraImageInput">
+                        </form>
+                    </div>
+
+                </div>
+
+                <!-- ── CAMERA ERROR ───────────────────────────── -->
+                <div id="cameraError" class="ps-camera-error" style="display:none">
+                    <span class="error-icon">⚠</span>
+                    <span id="cameraErrorMsg">Camera is unavailable.</span>
+                    You can upload an image instead.
+                </div>
+
+                <!-- ── CAMERA PREVIEW ─────────────────────────── -->
+                <div id="cameraSection" style="display:none">
+
+                    <div class="ps-camera-wrap">
+                        <video id="cameraVideo" class="ps-camera-video" autoplay playsinline></video>
+                        <div class="ps-camera-guide">
+                            <span class="ps-camera-guide-label">Align the marks section within this area</span>
+                        </div>
+                    </div>
+
+                    <p class="ps-camera-hint">
+                        Capture <strong>only the evaluated marks section</strong> — not the full answer paper.
+                    </p>
+
+                    <div class="ps-camera-actions">
+                        <button type="button" class="primary-button" id="captureBtn">⬤ Capture</button>
+                        <button type="button" class="icon-button" id="closeCameraBtn" title="Cancel">✕</button>
+                    </div>
+
+                </div>
+
+                <!-- ── CAPTURED IMAGE PREVIEW ─────────────────── -->
+                <div id="capturedSection" style="display:none">
+
+                    <div class="ps-preview-wrap">
+                        <p class="ps-preview-label">Captured Image</p>
+                        <img id="capturedImg" class="ps-preview-img" alt="Captured marks section">
+                    </div>
+
+                    <div class="ps-captured-actions">
+                        <button type="button" class="icon-button" id="retakeBtn">↩ Retake</button>
+                        <button type="button" class="primary-button" id="useImageBtn">✓ Use This Image</button>
+                    </div>
+
+                </div>
+
+                <!-- ── UPLOAD PREVIEW (file picker) ──────────────── -->
+                <div id="uploadPreviewSection" style="display:none">
+
+                    <div class="ps-preview-wrap">
+                        <p class="ps-preview-label">Selected Image</p>
+                        <img id="uploadPreviewImg" class="ps-preview-img" alt="Selected marks section">
+                    </div>
+
+                    <div class="ps-captured-actions">
+                        <button type="button" class="icon-button" id="changeImageBtn">↩ Change Image</button>
+                        <!-- This button submits the hidden form with the file -->
+                        <button type="button" class="primary-button" id="readMarksBtn">
+                            🔍 Read Marks
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Canvas used to encode camera frame as JPEG (hidden) -->
+                <canvas id="captureCanvas" style="display:none"></canvas>
+
+                <!-- Supported formats note -->
+                <p class="ps-formats-note">
+                    Supported: JPG · JPEG · PNG &nbsp;·&nbsp;
+                    Max size: 10 MB &nbsp;·&nbsp;
+                    Upload only the <em>evaluated marks section</em>, not the full paper.
+                </p>
+
+            </div><!-- /ps-upload-panel -->
+
+            {{end}}<!-- /upload stage -->
+
+
+            <!-- ═══════════════════════════════════════════════════
+                 STAGE 2 — EXTRACTION RESULT + VERIFICATION FORM
+            ════════════════════════════════════════════════════ -->
+            {{if eq .Stage "extract"}}
+            {{with .Extraction}}
+
+            <!-- Engine notice -->
+            <div class="ps-engine-notice">
+                <span class="ps-engine-icon">ℹ</span>
+                <div>
+                    <strong>Extraction Engine: {{.EngineUsed}}</strong>
+                    <span>{{.EngineNote}}</span>
+                </div>
+            </div>
+
+            <!-- Always-visible verification reminder -->
+            <div class="ps-verify-banner" role="alert">
+                <span>⚠</span>
+                <strong>Please verify all extracted marks before confirming.</strong>
+                Every field is editable. Do not confirm until values are correct.
+            </div>
+
+            <form action="/paperscan/confirm" method="POST" id="confirmForm">
+
+                <!-- ── STUDENT IDENTITY ─────────────────────── -->
+                <div class="panel ps-section-panel">
+                    <div class="panel-header">
+                        <div><h3>Student Details</h3><p>Required before confirming</p></div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="ps_name">Student Name</label>
+                            <input id="ps_name" type="text" name="name"
+                                placeholder="Enter student name" required autocomplete="off"
+                                value="{{.Name.Note}}">
+                        </div>
+                        <div class="field">
+                            <label for="ps_regno">Register Number</label>
+                            <input id="ps_regno" type="text" name="regno"
+                                placeholder="Enter register number" required autocomplete="off"
+                                value="{{.RegNo.Note}}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── PART A ────────────────────────────────── -->
+                <div class="panel ps-section-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Part A</h3>
+                            <p>Q1–Q5 · 2 marks each · max 10</p>
+                        </div>
+                        <span class="badge">10 Marks</span>
+                    </div>
+
+                    <div class="ps-parta-grid">
+
+                        <div class="ps-field-row">
+                            <label>Q1 <span class="ps-max">(0–2)</span></label>
+                            <input type="number" name="q1" min="0" max="2" required
+                                value="{{.Q1.Value}}"
+                                class="ps-mark-input {{if eq .Q1.Status "Not Detected"}}ps-input-missing{{end}}">
+                            <span class="ps-badge {{statusClass .Q1.Status}}">{{.Q1.Status}}</span>
+                        </div>
+
+                        <div class="ps-field-row">
+                            <label>Q2 <span class="ps-max">(0–2)</span></label>
+                            <input type="number" name="q2" min="0" max="2" required
+                                value="{{.Q2.Value}}"
+                                class="ps-mark-input {{if eq .Q2.Status "Not Detected"}}ps-input-missing{{end}}">
+                            <span class="ps-badge {{statusClass .Q2.Status}}">{{.Q2.Status}}</span>
+                        </div>
+
+                        <div class="ps-field-row">
+                            <label>Q3 <span class="ps-max">(0–2)</span></label>
+                            <input type="number" name="q3" min="0" max="2" required
+                                value="{{.Q3.Value}}"
+                                class="ps-mark-input {{if eq .Q3.Status "Not Detected"}}ps-input-missing{{end}}">
+                            <span class="ps-badge {{statusClass .Q3.Status}}">{{.Q3.Status}}</span>
+                        </div>
+
+                        <div class="ps-field-row">
+                            <label>Q4 <span class="ps-max">(0–2)</span></label>
+                            <input type="number" name="q4" min="0" max="2" required
+                                value="{{.Q4.Value}}"
+                                class="ps-mark-input {{if eq .Q4.Status "Not Detected"}}ps-input-missing{{end}}">
+                            <span class="ps-badge {{statusClass .Q4.Status}}">{{.Q4.Status}}</span>
+                        </div>
+
+                        <div class="ps-field-row">
+                            <label>Q5 <span class="ps-max">(0–2)</span></label>
+                            <input type="number" name="q5" min="0" max="2" required
+                                value="{{.Q5.Value}}"
+                                class="ps-mark-input {{if eq .Q5.Status "Not Detected"}}ps-input-missing{{end}}">
+                            <span class="ps-badge {{statusClass .Q5.Status}}">{{.Q5.Status}}</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ── PART B ────────────────────────────────── -->
+                <div class="panel ps-section-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Part B</h3>
+                            <p>2 questions · Option A or B · max 16 each · max 32</p>
+                        </div>
+                        <span class="badge">32 Marks</span>
+                    </div>
+
+                    <!-- Part B Q1 -->
+                    <div class="ps-option-question">
+
+                        <div class="ps-oq-label">
+                            <strong>Question 1</strong>
+                            <small>max 16 marks</small>
+                        </div>
+
+                        <div class="ps-oq-body">
+
+                            <div class="ps-oq-option-row">
+                                <span class="ps-oq-sublabel">Option selected:</span>
+                                <label class="ps-radio-label">
+                                    <input type="radio" name="b1_option" value="A"
+                                        {{if eq .B1Option.Value "A"}}checked{{end}}>
+                                    Option A
+                                </label>
+                                <label class="ps-radio-label">
+                                    <input type="radio" name="b1_option" value="B"
+                                        {{if eq .B1Option.Value "B"}}checked{{end}}>
+                                    Option B
+                                </label>
+                                <span class="ps-badge {{statusClass .B1Option.Status}}">{{.B1Option.Status}}</span>
+                            </div>
+
+                            <div class="ps-field-row">
+                                <label>Mark <span class="ps-max">(0–16)</span></label>
+                                <input type="number" name="b1_mark" min="0" max="16" required
+                                    value="{{.B1Mark.Value}}"
+                                    class="ps-mark-input {{if eq .B1Mark.Status "Not Detected"}}ps-input-missing{{end}}">
+                                <span class="ps-badge {{statusClass .B1Mark.Status}}">{{.B1Mark.Status}}</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="ps-divider"></div>
+
+                    <!-- Part B Q2 -->
+                    <div class="ps-option-question">
+
+                        <div class="ps-oq-label">
+                            <strong>Question 2</strong>
+                            <small>max 16 marks</small>
+                        </div>
+
+                        <div class="ps-oq-body">
+
+                            <div class="ps-oq-option-row">
+                                <span class="ps-oq-sublabel">Option selected:</span>
+                                <label class="ps-radio-label">
+                                    <input type="radio" name="b2_option" value="A"
+                                        {{if eq .B2Option.Value "A"}}checked{{end}}>
+                                    Option A
+                                </label>
+                                <label class="ps-radio-label">
+                                    <input type="radio" name="b2_option" value="B"
+                                        {{if eq .B2Option.Value "B"}}checked{{end}}>
+                                    Option B
+                                </label>
+                                <span class="ps-badge {{statusClass .B2Option.Status}}">{{.B2Option.Status}}</span>
+                            </div>
+
+                            <div class="ps-field-row">
+                                <label>Mark <span class="ps-max">(0–16)</span></label>
+                                <input type="number" name="b2_mark" min="0" max="16" required
+                                    value="{{.B2Mark.Value}}"
+                                    class="ps-mark-input {{if eq .B2Mark.Status "Not Detected"}}ps-input-missing{{end}}">
+                                <span class="ps-badge {{statusClass .B2Mark.Status}}">{{.B2Mark.Status}}</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── PART C ────────────────────────────────── -->
+                <div class="panel ps-section-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Part C</h3>
+                            <p>1 question · Option A or B · max 8</p>
+                        </div>
+                        <span class="badge">8 Marks</span>
+                    </div>
+
+                    <!-- Part C Q3 -->
+                    <div class="ps-option-question">
+
+                        <div class="ps-oq-label">
+                            <strong>Question 3</strong>
+                            <small>max 8 marks</small>
+                        </div>
+
+                        <div class="ps-oq-body">
+
+                            <div class="ps-oq-option-row">
+                                <span class="ps-oq-sublabel">Option selected:</span>
+                                <label class="ps-radio-label">
+                                    <input type="radio" name="c3_option" value="A"
+                                        {{if eq .C3Option.Value "A"}}checked{{end}}>
+                                    Option A
+                                </label>
+                                <label class="ps-radio-label">
+                                    <input type="radio" name="c3_option" value="B"
+                                        {{if eq .C3Option.Value "B"}}checked{{end}}>
+                                    Option B
+                                </label>
+                                <span class="ps-badge {{statusClass .C3Option.Status}}">{{.C3Option.Status}}</span>
+                            </div>
+
+                            <div class="ps-field-row">
+                                <label>Mark <span class="ps-max">(0–8)</span></label>
+                                <input type="number" name="c3_mark" min="0" max="8" required
+                                    value="{{.C3Mark.Value}}"
+                                    class="ps-mark-input {{if eq .C3Mark.Status "Not Detected"}}ps-input-missing{{end}}">
+                                <span class="ps-badge {{statusClass .C3Mark.Status}}">{{.C3Mark.Status}}</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── CONFIRM ACTIONS ───────────────────────── -->
+                <div class="ps-confirm-bar">
+                    <a href="/paperscan" class="icon-button ps-back-link">↩ Upload Different Image</a>
+                    <button type="submit" class="primary-button ps-confirm-btn">
+                        ✓ Confirm &amp; Calculate
+                    </button>
+                </div>
+
+            </form>
+
+            {{end}}<!-- /with .Extraction -->
+            {{end}}<!-- /extract stage -->
+
+        </div><!-- /content -->
+    </main>
+</div><!-- /app -->
+
+<!-- MOBILE BOTTOM NAV — hidden on desktop via CSS -->
+<nav class="mob-nav" aria-label="Mobile navigation">
+    <a href="/"          class="mob-nav-item">
+        <span class="mob-nav-icon">⌂</span>
+        <span class="mob-nav-label">Dashboard</span>
+    </a>
+    <a href="/#markForm" class="mob-nav-item">
+        <span class="mob-nav-icon">＋</span>
+        <span class="mob-nav-label">Marks</span>
+    </a>
+    <a href="/class"     class="mob-nav-item">
+        <span class="mob-nav-icon">▦</span>
+        <span class="mob-nav-label">Class</span>
+    </a>
+    <a href="/paperscan" class="mob-nav-item mob-nav-active">
+        <span class="mob-nav-icon">⬡</span>
+        <span class="mob-nav-label">PaperScan</span>
+    </a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAPERSCAN JAVASCRIPT
+     Handles:
+       1. Camera open / capture / retake / use-this-image
+       2. File picker preview
+       3. Both paths submit to the SAME /paperscan/extract endpoint
+     No OCR logic here — that lives in paperscan/extractor.go
+════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    'use strict';
+
+    // ── Element refs ──────────────────────────────────────
+    var openCameraBtn       = document.getElementById('openCameraBtn');
+    var cameraSection       = document.getElementById('cameraSection');
+    var cameraVideo         = document.getElementById('cameraVideo');
+    var captureBtn          = document.getElementById('captureBtn');
+    var closeCameraBtn      = document.getElementById('closeCameraBtn');
+    var captureCanvas       = document.getElementById('captureCanvas');
+    var capturedSection     = document.getElementById('capturedSection');
+    var capturedImg         = document.getElementById('capturedImg');
+    var retakeBtn           = document.getElementById('retakeBtn');
+    var useImageBtn         = document.getElementById('useImageBtn');
+    var cameraError         = document.getElementById('cameraError');
+    var cameraErrorMsg      = document.getElementById('cameraErrorMsg');
+
+    var imageFileInput      = document.getElementById('imageFileInput');
+    var uploadPreviewSection= document.getElementById('uploadPreviewSection');
+    var uploadPreviewImg    = document.getElementById('uploadPreviewImg');
+    var changeImageBtn      = document.getElementById('changeImageBtn');
+    var readMarksBtn        = document.getElementById('readMarksBtn');
+    var uploadForm          = document.getElementById('uploadForm');
+
+    // Only run camera/upload logic on the upload stage.
+    if (!openCameraBtn) return;
+
+    var mediaStream = null;
+    var capturedBlob = null;
+
+    // ── Camera helpers ────────────────────────────────────
+    function stopCamera() {
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(function (t) { t.stop(); });
+            mediaStream = null;
+        }
+    }
+
+    function showCameraError(msg) {
+        cameraErrorMsg.textContent = msg;
+        cameraError.style.display  = 'flex';
+        cameraSection.style.display = 'none';
+    }
+
+    // ── Open camera ───────────────────────────────────────
+    openCameraBtn.addEventListener('click', function () {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showCameraError('Camera scanning is not supported in this browser. Please upload an image instead.');
+            return;
+        }
+
+        var constraints = {
+            video: {
+                facingMode: { ideal: 'environment' }, // prefer rear camera on mobile
+                width:  { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function (stream) {
+                mediaStream = stream;
+                cameraVideo.srcObject = stream;
+                cameraSection.style.display   = 'block';
+                capturedSection.style.display  = 'none';
+                cameraError.style.display      = 'none';
+            })
+            .catch(function (err) {
+                var msg = 'Camera is unavailable on this device. Please upload an image instead.';
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    msg = 'Camera access was denied. You can upload an image instead.';
+                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    msg = 'No camera found on this device. Please upload an image instead.';
+                } else if (err.name === 'NotSupportedError') {
+                    msg = 'Camera scanning is not supported in this browser. Please upload an image instead.';
+                }
+                showCameraError(msg);
+            });
+    });
+
+    // ── Close camera ──────────────────────────────────────
+    closeCameraBtn.addEventListener('click', function () {
+        stopCamera();
+        cameraSection.style.display = 'none';
+    });
+
+    // ── Capture frame ─────────────────────────────────────
+    captureBtn.addEventListener('click', function () {
+        captureCanvas.width  = cameraVideo.videoWidth  || 1280;
+        captureCanvas.height = cameraVideo.videoHeight || 720;
+
+        var ctx = captureCanvas.getContext('2d');
+        ctx.drawImage(cameraVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+
+        captureCanvas.toBlob(function (blob) {
+            capturedBlob = blob;
+            var url = URL.createObjectURL(blob);
+            capturedImg.src = url;
+            stopCamera();
+            cameraSection.style.display   = 'none';
+            capturedSection.style.display  = 'block';
+        }, 'image/jpeg', 0.92);
+    });
+
+    // ── Retake ────────────────────────────────────────────
+    retakeBtn.addEventListener('click', function () {
+        capturedBlob = null;
+        capturedSection.style.display = 'none';
+        // Re-open camera
+        openCameraBtn.click();
+    });
+
+    // ── Use this image → submit via hidden file input ─────
+    useImageBtn.addEventListener('click', function () {
+        if (!capturedBlob) return;
+
+        // Convert blob to a File and attach it to the upload form
+        var file = new File([capturedBlob], 'camera_capture.jpg', { type: 'image/jpeg' });
+        var dt = new DataTransfer();
+        dt.items.add(file);
+        imageFileInput.files = dt.files;
+
+        // Show the same preview + Read Marks path as a normal upload
+        capturedSection.style.display        = 'none';
+        uploadPreviewImg.src                  = URL.createObjectURL(capturedBlob);
+        uploadPreviewSection.style.display    = 'block';
+    });
+
+    // ── File picker preview ───────────────────────────────
+    imageFileInput.addEventListener('change', function () {
+        var file = this.files[0];
+        if (!file) return;
+
+        var ext = file.name.split('.').pop().toLowerCase();
+        if (ext !== 'jpg' && ext !== 'jpeg' && ext !== 'png') {
+            alert('Unsupported file type. Please upload JPG, JPEG, or PNG.');
+            this.value = '';
+            return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            uploadPreviewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        uploadPreviewSection.style.display = 'block';
+        capturedSection.style.display      = 'none';
+        cameraSection.style.display        = 'none';
+    });
+
+    // ── Change image ──────────────────────────────────────
+    if (changeImageBtn) {
+        changeImageBtn.addEventListener('click', function () {
+            uploadPreviewSection.style.display = 'none';
+            imageFileInput.value = '';
+            capturedBlob = null;
+        });
+    }
+
+    // ── Read Marks → submit the form ──────────────────────
+    if (readMarksBtn) {
+        readMarksBtn.addEventListener('click', function () {
+            if (!imageFileInput.files || imageFileInput.files.length === 0) {
+                alert('Please select or capture an image first.');
+                return;
+            }
+            uploadForm.submit();
+        });
+    }
+
+}());
+</script>
+
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Analysis — MarkAI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- ═══════════════════════════════════════
+         SIDEBAR  (identical to index.html)
+    ════════════════════════════════════════ -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-mark">M</div>
+            <div>
+                <h1>MarkAI</h1>
+                <span>Academic Intelligence</span>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <a href="/" class="nav-item">
+                <span>⌂</span> Overview
+            </a>
+            <a href="/#markForm" class="nav-item">
+                <span>＋</span> Mark Entry
+            </a>
+            <a href="/class" class="nav-item active">
+                <span>▦</span> Class Analysis
+            </a>
+            <a href="#" class="nav-item">
+                <span>✦</span> AI Assistant
+            </a>
+            <a href="/paperscan" class="nav-item">
+                <span>⬡</span> PaperScan
+            </a>
+            <a href="#" class="nav-item">
+                <span>▤</span> Reports
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="#" class="nav-item">
+                <span>⚙</span> Settings
+            </a>
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>System Ready</strong>
+                    <small>MarkAI is operational</small>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- ═══════════════════════════════════════
+         MAIN
+    ════════════════════════════════════════ -->
+    <main class="main">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="mobile-brand"><strong>MarkAI</strong></div>
+            <div class="topbar-right">
+                <button class="icon-button" title="Help">?</button>
+                <div class="profile">
+                    <div class="profile-avatar">F</div>
+                    <div>
+                        <strong>Faculty</strong>
+                        <small>Instructor</small>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+
+        <!-- Content -->
+        <div class="content">
+
+            <!-- Page heading -->
+            <section class="welcome">
+                <div>
+                    <p class="eyebrow">CLASS ANALYSIS</p>
+                    <h2>Class Performance</h2>
+                    <p>
+                        Aggregate statistics and individual results for all
+                        students submitted this session.
+                        Pass threshold: <strong>{{.Stats.PassMark}} / 50</strong>.
+                    </p>
+                </div>
+                <a href="/#markForm">
+                    <button class="primary-button">+ New Mark Entry</button>
+                </a>
+            </section>
+
+
+            <!-- ─────────────────────────────────────
+                 SUMMARY CARDS
+            ──────────────────────────────────────── -->
+            {{if .Stats.TotalStudents}}
+
+            <section class="stats-grid ca-stats-grid">
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Total Students</span>
+                        <div class="stat-icon blue">01</div>
+                    </div>
+                    <strong>{{.Stats.TotalStudents}}</strong>
+                    <small>Submitted this session</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Passed</span>
+                        <div class="stat-icon green">✓</div>
+                    </div>
+                    <strong>{{.Stats.Passed}}</strong>
+                    <small>Score ≥ {{.Stats.PassMark}} / 50</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Needs Review</span>
+                        <div class="stat-icon orange">!</div>
+                    </div>
+                    <strong>{{.Stats.NeedsReview}}</strong>
+                    <small>Score &lt; {{.Stats.PassMark}} / 50</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Class Average</span>
+                        <div class="stat-icon purple">%</div>
+                    </div>
+                    <strong>{{printf "%.1f" .Stats.ClassAverage}}</strong>
+                    <small>Mean score out of 50</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Highest Score</span>
+                        <div class="stat-icon blue">▲</div>
+                    </div>
+                    <strong>{{.Stats.HighestTotal}}</strong>
+                    <small>Out of 50</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Lowest Score</span>
+                        <div class="stat-icon orange">▼</div>
+                    </div>
+                    <strong>{{.Stats.LowestTotal}}</strong>
+                    <small>Out of 50</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span>Pass Rate</span>
+                        <div class="stat-icon green">%</div>
+                    </div>
+                    <strong>{{printf "%.1f" .Stats.PassPercentage}}<small style="font-size:14px;font-weight:400">%</small></strong>
+                    <small>Of class passed</small>
+                </div>
+
+            </section>
+
+            {{else}}
+
+            <!-- Empty state -->
+            <div class="ca-empty">
+                <div class="ca-empty-icon">▦</div>
+                <h3>No students yet</h3>
+                <p>
+                    Submit mark entries from the
+                    <a href="/#markForm">Mark Entry</a> page.
+                    Results will appear here automatically.
+                </p>
+            </div>
+
+            {{end}}
+
+
+            <!-- ─────────────────────────────────────
+                 FILTER BAR + STUDENT TABLE
+                 Only shown when there are students.
+            ──────────────────────────────────────── -->
+            {{if .Stats.TotalStudents}}
+
+            <div class="panel ca-table-panel">
+
+                <div class="ca-table-header">
+
+                    <div>
+                        <h3>Student Results</h3>
+                        <p>
+                            {{if .Filter}}
+                                Showing filtered results ·
+                                <a href="/class" class="ca-clear-link">Clear filter</a>
+                            {{else}}
+                                All {{.Stats.TotalStudents}} students
+                            {{end}}
+                        </p>
+                    </div>
+
+                    <!-- Filter pills -->
+                    <div class="ca-filters">
+
+                        <a
+                            href="/class"
+                            class="ca-filter-pill {{if eq .Filter ""}}active{{end}}"
+                        >
+                            All
+                        </a>
+
+                        <a
+                            href="/class?filter=below25"
+                            class="ca-filter-pill ca-filter-low {{if eq .Filter "below25"}}active{{end}}"
+                        >
+                            Below 25
+                        </a>
+
+                        <a
+                            href="/class?filter=between"
+                            class="ca-filter-pill ca-filter-mid {{if eq .Filter "between"}}active{{end}}"
+                        >
+                            25 – 35
+                        </a>
+
+                        <a
+                            href="/class?filter=above35"
+                            class="ca-filter-pill ca-filter-high {{if eq .Filter "above35"}}active{{end}}"
+                        >
+                            Above 35
+                        </a>
+
+                    </div>
+
+                </div><!-- /ca-table-header -->
+
+
+                <!-- Student table -->
+                {{if .Students}}
+
+                <div class="ca-table-wrap">
+                    <table class="ca-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Register No.</th>
+                                <th>Part A<span class="th-sub">/ 10</span></th>
+                                <th>Part B<span class="th-sub">/ 32</span></th>
+                                <th>Part C<span class="th-sub">/ 8</span></th>
+                                <th>Total<span class="th-sub">/ 50</span></th>
+                                <th>Percentage</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range $i, $s := .Students}}
+                            <tr>
+                                <td class="td-num">{{inc $i}}</td>
+                                <td class="td-name">{{$s.Name}}</td>
+                                <td class="td-regno">{{$s.RegNo}}</td>
+                                <td class="td-mark">{{$s.PartATotal}}</td>
+                                <td class="td-mark">{{$s.PartBTotal}}</td>
+                                <td class="td-mark">{{$s.PartCTotal}}</td>
+                                <td class="td-total">{{$s.Total}}</td>
+                                <td class="td-pct">{{printf "%.2f" $s.Percentage}}%</td>
+                                <td>
+                                    {{if ge $s.Total 25}}
+                                        <span class="status-badge pass">Pass</span>
+                                    {{else}}
+                                        <span class="status-badge review">Review</span>
+                                    {{end}}
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+
+                {{else}}
+
+                <!-- Filter returned no results -->
+                <div class="ca-no-results">
+                    <p>No students match this filter.</p>
+                    <a href="/class" class="ca-clear-link">Show all students</a>
+                </div>
+
+                {{end}}
+
+            </div><!-- /ca-table-panel -->
+
+            {{end}}
+
+
+        </div><!-- /content -->
+
+    </main>
+
+</div><!-- /app -->
+
+<!-- MOBILE BOTTOM NAV — hidden on desktop via CSS -->
+<nav class="mob-nav" aria-label="Mobile navigation">
+    <a href="/"          class="mob-nav-item">
+        <span class="mob-nav-icon">⌂</span>
+        <span class="mob-nav-label">Dashboard</span>
+    </a>
+    <a href="/#markForm" class="mob-nav-item">
+        <span class="mob-nav-icon">＋</span>
+        <span class="mob-nav-label">Marks</span>
+    </a>
+    <a href="/class"     class="mob-nav-item mob-nav-active">
+        <span class="mob-nav-icon">▦</span>
+        <span class="mob-nav-label">Class</span>
+    </a>
+    <a href="/paperscan" class="mob-nav-item">
+        <span class="mob-nav-icon">⬡</span>
+        <span class="mob-nav-label">PaperScan</span>
+    </a>
+</nav>
+
+</body>
+</html>
