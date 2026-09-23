@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -129,7 +130,13 @@ func main() {
 
 	fmt.Println("MarkAI server running at http://localhost:8080")
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	fmt.Println("Listening on port", port)
+
+	if err := http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
 		fmt.Println("Server error:", err)
 	}
 }
